@@ -1,6 +1,6 @@
 import numpy as np
 from sqlalchemy.orm import Session
-from sqlalchemy import text
+from sqlalchemy import text, func
 from src.database import SessionLocal
 from src.models import Product, User
 from src.services.rerank_service import RerankService
@@ -17,32 +17,24 @@ class MatchingService:
         if len(product_vectors) == 0:
             return []
         
-        # product_ids = [p.id for p in products]
-        # product_texts = [f"{p.name} {p.description} {p.color}" for p in products]
-
-        # Chuyển đổi query_vector thành chuỗi định dạng mảng SQL cho pgvector
         query_vector_str = str(query_vector.tolist())
-        
-        # Truy vấn SQL tối ưu, chỉ lấy các cột cần thiết
-        sql_query = text("""
-            SELECT id, name, description, color, 1 - (embedding <=> :query_vector) AS cosine_similarity
-            FROM products
-            WHERE embedding IS NOT NULL
-            ORDER BY cosine_similarity DESC
-            LIMIT 20
-        """)
-        
-        # Thực thi truy vấn với query_vector
-        result = self.db.execute(sql_query, {'query_vector': query_vector_str})
-        top_products = result.fetchall()
-        
-        # Tạo mảng similarities và candidates từ kết quả SQL
-        # similarities = np.array([row[4] for row in top_products])
-        # top_20_idx = np.argsort(similarities)[-20:][::-1]
+
+        orm_query = (
+            self.db.query(Product)
+            .filter(Product.embedding != None)
+            .order_by(func.cosine_distance(Product.embedding, query_vector_str))
+            .limit(20)
+        )
+        result = orm_query.all()
+
         candidates = [
-            {"id": row[0], "text": f"{row[1]} {row[2]} {row[3]}"}
-            for row in top_products[:20]
+            {
+                "id": product.id,
+                "text": f"{str(product.name or '')} {str(product.description or '')} {str(product.color or '')}"
+            }
+            for product in result[:top_k]
         ]
 
         reranked_ids = self.reranker.rerank(query_text, candidates, k=top_k)
         return reranked_ids
+    

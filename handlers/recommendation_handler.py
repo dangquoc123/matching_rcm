@@ -7,7 +7,7 @@ class RecommendationHandler:
 
     def handle(self, input_data):
         try:
-            search_query = input_data.get("search_query")
+            search_query = input_data.get("search_query") or ""
             clicked_product_id = input_data.get("clicked_product_id")
             recent_product_ids = input_data.get("recent_product_ids")
 

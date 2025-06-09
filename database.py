@@ -4,19 +4,20 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 import os
 import sys
+from src.config import DATABASE_NAME, DATABASE_PASSWORD
 
-DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql+psycopg2://postgres:Pass1234!@localhost:5432/postgres"
+DATABASE_URL = f"postgresql+psycopg2://postgres:{DATABASE_PASSWORD}@localhost:5432/{DATABASE_NAME}"
 
 try:
     engine = create_engine(DATABASE_URL, echo=True)
     connection = engine.connect()
     connection.close()
-    print("Kết nối database thành công.")
+    print("Database connect sucessfully")
 except OperationalError as e:
-    print("Lỗi kết nối tới database:", e)
+    print("Error when connect database :", e)
     sys.exit(1)
 except SQLAlchemyError as e:
-    print("Lỗi SQLAlchemy:", e)
+    print("Error SQLAlchemy:", e)
     sys.exit(1)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

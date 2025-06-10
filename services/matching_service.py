@@ -30,10 +30,11 @@ class MatchingService:
         candidates = [
             {
                 "id": product.id,
-                "text": f"{str(product.name or '')} {str(product.description or '')} {str(product.color or '')}"
+                "text": f"Name: {product.name or ''}. Description: {product.description or ''}. Color: {product.color or ''}."
             }
-            for product in result[:top_k]
+            for product in result
         ]
+        # print("candidate : \n", candidates)
 
         reranked_ids = self.reranker.rerank(query_text, candidates, k=top_k)
         return reranked_ids
